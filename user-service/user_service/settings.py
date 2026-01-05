@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-&%x)pgoj_vgkr)t@^hv69a3n5d6n+as^)yy4&oym7noyiav(9b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -63,6 +64,21 @@ REST_FRAMEWORK = {
     ),
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+
+    # 🔐 THIS IS THE MOST IMPORTANT LINE
+    "SIGNING_KEY": "super-secret-key",
+
+    "ALGORITHM": "HS256",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+
+    # Optional but useful
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
+
 AUTH_USER_MODEL = 'users.User'
 ROOT_URLCONF = 'user_service.urls'
 
@@ -94,7 +110,7 @@ DATABASES = {
         'NAME': 'user_db',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': 'user-db',
+        'HOST': 'postgres-user',
         'PORT': '5432',
     }
 }

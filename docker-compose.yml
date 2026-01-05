@@ -1,0 +1,165 @@
+services:
+  # =========================
+  # PostgreSQL Databases
+  # =========================
+  postgres-user:
+    image: postgres:15
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library-net
+
+  postgres-book:
+    image: postgres:15
+    container_name: postgres-book
+    environment:
+      POSTGRES_DB: book_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - book_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library-net
+
+  postgres-loan:
+    image: postgres:15
+    container_name: postgres-loan
+    environment:
+      POSTGRES_DB: loan_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - loan_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library-net
+
+  # =========================
+  # Eureka Discovery Service
+  # =========================
+  discovery-service:
+    build: ./discovery-service
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - library-net
+
+  # =========================
+  # API Gateway
+  # =========================
+  gateway-service:
+    build: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-service
+    networks:
+      - library-net
+
+  # =========================
+  # Loan Service (Spring Boot)
+  # =========================
+  loan-service:
+    build: ./loan-service
+    container_name: loan-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres-loan:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-loan:5432/loan_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - library-net
+
+  # =========================
+  # User Service (Django)
+  # =========================
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      DB_NAME: user_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: postgres-user
+      DB_PORT: 5432
+      RUNNING_IN_DOCKER: "true"
+    networks:
+      - library-net
+
+  # =========================
+  # Book Service (Django)
+  # =========================
+  book-service:
+    build: ./book-service
+    container_name: book-service
+    ports:
+      - "8002:8000"
+    depends_on:
+      postgres-book:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      DB_NAME: book_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: postgres-book
+      DB_PORT: 5432
+      RUNNING_IN_DOCKER: "true"
+    networks:
+      - library-net
+
+# =========================
+# Volumes
+# =========================
+volumes:
+  user_db_data:
+  book_db_data:
+  loan_db_data:
+
+# =========================
+# Network
+# =========================
+networks:
+  library-net:
+    driver: bridge
