@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: user_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
     ports:
       - "5433:5432"
     volumes:
@@ -27,7 +27,7 @@ services:
     environment:
       POSTGRES_DB: book_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
     ports:
       - "5434:5432"
     volumes:
@@ -46,7 +46,7 @@ services:
     environment:
       POSTGRES_DB: loan_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
     ports:
       - "5435:5432"
     volumes:
@@ -80,6 +80,8 @@ services:
       - "8080:8080"
     depends_on:
       - discovery-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (see .env.example)}
     networks:
       - library-net
 
@@ -99,7 +101,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-loan:5432/loan_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
     networks:
       - library-net
 
@@ -119,7 +121,9 @@ services:
     environment:
       DB_NAME: user_db
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be set (see .env.example)}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (see .env.example)}
       DB_HOST: postgres-user
       DB_PORT: 5432
       RUNNING_IN_DOCKER: "true"
@@ -142,7 +146,8 @@ services:
     environment:
       DB_NAME: book_db
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set (see .env.example)}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be set (see .env.example)}
       DB_HOST: postgres-book
       DB_PORT: 5432
       RUNNING_IN_DOCKER: "true"
