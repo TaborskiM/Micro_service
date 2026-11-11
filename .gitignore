@@ -1,0 +1,30 @@
+# Local secrets - never commit. Copy .env.example to .env instead.
+.env
+.env.*
+!.env.example
+
+# Maven build output
+target/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDEs / editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+.sts4-cache/
+nbproject/
+
+# OS
+.DS_Store
+Thumbs.db
