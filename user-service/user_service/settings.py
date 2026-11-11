@@ -10,18 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def require_env(name):
+    """Return a required environment variable or fail fast at startup."""
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f"Environment variable {name} is required (see .env.example).")
+    return value
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&%x)pgoj_vgkr)t@^hv69a3n5d6n+as^)yy4&oym7noyiav(9b'
+SECRET_KEY = require_env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -64,12 +75,18 @@ REST_FRAMEWORK = {
     ),
 }
 
+# The gateway (jjwt Keys.hmacShaKeyFor) rejects HMAC keys shorter than 32 bytes,
+# so fail here too instead of issuing tokens the gateway would refuse.
+JWT_SECRET = require_env("JWT_SECRET")
+if len(JWT_SECRET.encode("utf-8")) < 32:
+    raise ImproperlyConfigured("JWT_SECRET must be at least 32 bytes (256 bits) for HS256.")
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 
-    # 🔐 THIS IS THE MOST IMPORTANT LINE
-    "SIGNING_KEY": "super-secret-key",
+    # Must be the same JWT_SECRET the gateway uses to verify tokens.
+    "SIGNING_KEY": JWT_SECRET,
 
     "ALGORITHM": "HS256",
     "AUTH_HEADER_TYPES": ("Bearer",),
@@ -107,11 +124,11 @@ WSGI_APPLICATION = 'user_service.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'user_db',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'postgres-user',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'user_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': require_env('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'postgres-user'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
