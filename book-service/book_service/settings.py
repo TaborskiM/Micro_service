@@ -2,9 +2,19 @@ from pathlib import Path
 import os
 from datetime import timedelta
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-&%x)pgoj_vgkr)t@^hv69a3n5d6n+as^)yy4&oym7noyiav(9b'
+
+def require_env(name):
+    """Return a required environment variable or fail fast at startup."""
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f"Environment variable {name} is required (see .env.example).")
+    return value
+
+SECRET_KEY = require_env("DJANGO_SECRET_KEY")
 
 DEBUG = True
 
@@ -82,7 +92,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv("DB_NAME", "book_db"),
         'USER': os.getenv("DB_USER", "postgres"),
-        'PASSWORD': os.getenv("DB_PASSWORD", "postgres"),
+        'PASSWORD': require_env("DB_PASSWORD"),
         'HOST': os.getenv("DB_HOST", "postgres-book"),
         'PORT': os.getenv("DB_PORT", "5432"),
     }
